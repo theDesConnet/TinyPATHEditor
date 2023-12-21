@@ -12,34 +12,59 @@ namespace TinyPATHEditor
 {
 	public partial class MainForm : Form
 	{
-		// Get current user PATH value
+		private string CurrentPath;
 
-		private string GetUserPATH()
+		/// <summary>
+		/// Get Path from registry
+		/// </summary>
+		/// <param name="isUserPath">This is user path</param>
+		/// <returns>Path</returns>
+		private string GetPATH(bool isUserPath)
 		{
-			return Registry.CurrentUser.OpenSubKey("Environment").GetValue("Path").ToString();
+			return isUserPath ? Registry.CurrentUser.OpenSubKey("Environment").GetValue("Path").ToString() : Registry.LocalMachine.OpenSubKey("SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment").GetValue("Path").ToString();
 		}
 
-		// Get system PATH value
-
-		private string GetSystemPATH()
+		/// <summary>
+		/// Set Path from registry
+		/// </summary>
+		/// <param name="isUserPath">This is user path</param>
+		/// <param name="PATH">Path to set</param>
+		private void SetPATH(bool isUserPath, string PATH)
 		{
-			return Registry.LocalMachine.OpenSubKey("SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment").GetValue("Path").ToString();
+			if (isUserPath) Registry.CurrentUser.CreateSubKey("Environment").SetValue("Path", PATH);
+			else Registry.LocalMachine.CreateSubKey("SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment").SetValue("Path", PATH);
 		}
 
-		// Set current user PATH value
+		/// <summary>
+		/// Get Path in array
+		/// </summary>
+		/// <param name="isUserPath">This is user path</param>
+		/// <returns>Array path's</returns>
+		private string[] GetPathArray(bool isUserPath)
+        {
+			List<string> _strList = new List<string>();
 
-		private void SetUserPATH(string UserPATH)
-		{
-			Registry.CurrentUser.CreateSubKey("Environment").SetValue("Path", UserPATH);
-		}
+			foreach (string s in CurrentPath.Split(';'))
+            {
+				if (!String.IsNullOrEmpty(s)) _strList.Add(s);
+			}
 
-		// Set system PATH value
+			return _strList.ToArray();
+        }
 
-		private void SetSystemPATH(string SystemPATH)
-		{
-			Registry.LocalMachine.CreateSubKey("SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment").SetValue("Path", SystemPATH);
-		}
-
+		/// <summary>
+		/// Set table path
+		/// </summary>
+		/// <param name="path">Array path</param>
+		public void SetTablePath(string[] path)
+        {
+			PathTable.Rows.Clear();
+			foreach (string row in path)
+            {
+				PathTable.Rows.Add(row);
+            }
+        }
+			 
 		// Form constructor
 
 		public MainForm()
@@ -51,15 +76,15 @@ namespace TinyPATHEditor
 
 		private void MainForm_Load(object sender, EventArgs e)
 		{
-			if (UserRadio.Checked) PathBox.Text = GetUserPATH();
-			if (SystemRadio.Checked) PathBox.Text = GetSystemPATH();
+			CurrentPath = PathBox.Text = GetPATH(UserRadio.Checked);
+			SetTablePath(GetPathArray(UserRadio.Checked));
 		}
 
 		// Radio boxes events
 
-		private void UserRadio_CheckedChanged(object sender, EventArgs e) { if (UserRadio.Checked) PathBox.Text = GetUserPATH(); }
+		private void UserRadio_CheckedChanged(object sender, EventArgs e) { CurrentPath = PathBox.Text = GetPATH(UserRadio.Checked); }
 
-		private void SystemRadio_CheckedChanged(object sender, EventArgs e) { if (SystemRadio.Checked) PathBox.Text = GetSystemPATH(); }
+		private void SystemRadio_CheckedChanged(object sender, EventArgs e) { CurrentPath = PathBox.Text = GetPATH(UserRadio.Checked); }
 
 		// Apply changes
 
@@ -71,8 +96,7 @@ namespace TinyPATHEditor
 
 			// Write new PATH value
 
-			if (UserRadio.Checked) SetUserPATH(PathBox.Text);
-			if (SystemRadio.Checked) SetSystemPATH(PathBox.Text);
+			SetPATH(UserRadio.Checked, CurrentPath);
 
 			// Show message and logout if need
 
@@ -84,14 +108,28 @@ namespace TinyPATHEditor
 		// Empty PATH value can make the system unusable!!!
 
 		private void PathBox_TextChanged(object sender, EventArgs e)
-		{
-			ApplyButton.Enabled = (PathBox.Text.Length > 0);
+        {
+
+            ApplyButton.Enabled = (PathBox.Text.Length > 0);
+            if (CurrentPath != PathBox.Text) CurrentPath = PathBox.Text;
+
+			SetTablePath(GetPathArray(UserRadio.Checked));
 		}
 
 		// Open project's GitHub repository
         private void MainForm_HelpButtonClicked(object sender, CancelEventArgs e)
         {
 			Process.Start("https://github.com/AngelOfV0id/TinyPATHEditor");
+        }
+
+        private void PathTable_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+        {
+            List<string> _getPath = new List<string>();
+            foreach (DataGridViewRow row in PathTable.Rows)
+            {
+				if (row.Cells[0].Value != null) _getPath.Add(row.Cells[0].Value.ToString());
+            }
+			PathBox.Text = String.Join(";", _getPath.ToArray());
         }
     }
 }
