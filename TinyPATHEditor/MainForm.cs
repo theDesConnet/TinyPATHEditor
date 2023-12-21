@@ -52,6 +52,16 @@ namespace TinyPATHEditor
 			return _strList.ToArray();
         }
 
+		private string[] GetTableRows()
+        {
+			List<string> _getPath = new List<string>();
+			foreach (DataGridViewRow row in PathTable.Rows)
+			{
+				if (row.Cells[0].Value != null) _getPath.Add(row.Cells[0].Value.ToString());
+			}
+			return _getPath.ToArray();
+		}
+
 		/// <summary>
 		/// Set table path
 		/// </summary>
@@ -113,7 +123,7 @@ namespace TinyPATHEditor
             ApplyButton.Enabled = (PathBox.Text.Length > 0);
             if (CurrentPath != PathBox.Text) CurrentPath = PathBox.Text;
 
-			SetTablePath(GetPathArray(UserRadio.Checked));
+			if (GetTableRows() != GetPathArray(UserRadio.Checked)) SetTablePath(GetPathArray(UserRadio.Checked));
 		}
 
 		// Open project's GitHub repository
@@ -122,14 +132,9 @@ namespace TinyPATHEditor
 			Process.Start("https://github.com/AngelOfV0id/TinyPATHEditor");
         }
 
-        private void PathTable_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+        private void PathTable_CellValueChanged(object sender, DataGridViewCellEventArgs e)
         {
-            List<string> _getPath = new List<string>();
-            foreach (DataGridViewRow row in PathTable.Rows)
-            {
-				if (row.Cells[0].Value != null) _getPath.Add(row.Cells[0].Value.ToString());
-            }
-			PathBox.Text = String.Join(";", _getPath.ToArray());
-        }
+			PathBox.Text = String.Join(";", GetTableRows());
+		}
     }
 }

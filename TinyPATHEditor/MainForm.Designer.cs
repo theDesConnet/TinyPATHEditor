@@ -147,7 +147,7 @@
             this.PathTable.Name = "PathTable";
             this.PathTable.Size = new System.Drawing.Size(656, 294);
             this.PathTable.TabIndex = 0;
-            this.PathTable.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.PathTable_CellEndEdit);
+            this.PathTable.CellValueChanged += new System.Windows.Forms.DataGridViewCellEventHandler(this.PathTable_CellValueChanged);
             // 
             // PathCol
             // 
